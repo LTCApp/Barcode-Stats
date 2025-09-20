@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>سوق الجملة</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#d32f2f">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode@2.3.7"></script>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <!-- شاشة التحميل -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-container">
+      <div class="logo-loading">
+        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="white" viewBox="0 0 24 24">
+          <rect x="2" y="4" width="3" height="16" fill="white"/>
+          <rect x="6" y="4" width="1.5" height="16" fill="white"/>
+          <rect x="9" y="4" width="2.5" height="16" fill="white"/>
+          <rect x="13" y="4" width="1.5" height="16" fill="white"/>
+          <rect x="16" y="4" width="3" height="16" fill="white"/>
+          <rect x="20" y="4" width="1.5" height="16" fill="white"/>
+        </svg>
+      </div>
+      <h1 class="loading-title">سوق الجملة</h1>
+      <p class="loading-subtitle">Barcode Stats</p>
+      <div class="loading-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+      </div>
+      <p class="loading-text">جاري التحميل...</p>
+    </div>
+  </div>
+
+  <!-- المحتوى الرئيسي -->
+  <div id="mainContent" class="main-content hidden">
+    <audio id="scanSound" src="scanner.mp3" preload="auto"></audio>
+    
+    <header class="app-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="white" viewBox="0 0 24 24">
+            <rect x="2" y="4" width="2" height="16" fill="white"/>
+            <rect x="6" y="4" width="1" height="16" fill="white"/>
+            <rect x="9" y="4" width="2" height="16" fill="white"/>
+            <rect x="13" y="4" width="1" height="16" fill="white"/>
+            <rect x="16" y="4" width="2" height="16" fill="white"/>
+            <rect x="20" y="4" width="1" height="16" fill="white"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="app-title">سوق الجملة</span>
+          <span class="app-subtitle">Barcode Stats</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="scanBtn" class="header-btn" title="مسح باركود">
+          <i class="fa-solid fa-qrcode"></i>
+          <span>مسح</span>
+        </button>
+        <button id="exportBtn" class="header-btn" title="تصدير البيانات">
+          <i class="fa-solid fa-file-export"></i>
+          <span>تصدير</span>
+        </button>
+        <button id="clearBtn" class="header-btn danger" title="حذف جميع البيانات">
+          <i class="fa-solid fa-trash"></i>
+          <span>حذف الكل</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- إحصائيات سريعة -->
+    <div class="stats-container">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fa-solid fa-barcode"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-number" id="totalCount">0</span>
+          <span class="stat-label">إجمالي</span>
+        </div>
+      </div>
+      <div class="stat-card available">
+        <div class="stat-icon">
+          <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-number" id="availableCount">0</span>
+          <span class="stat-label">متوفر</span>
+        </div>
+      </div>
+      <div class="stat-card unavailable">
+        <div class="stat-icon">
+          <i class="fa-solid fa-times-circle"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-number" id="unavailableCount">0</span>
+          <span class="stat-label">غير متوفر</span>
+        </div>
+      </div>
+    </div>
+
+    <main class="main-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-list"></i> قائمة الأكواد</h2>
+        <div class="search-container">
+          <input type="text" id="searchInput" placeholder="البحث في الأكواد..." class="search-input">
+          <i class="fa-solid fa-search search-icon"></i>
+        </div>
+      </div>
+      
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">
+          <i class="fa-solid fa-barcode"></i>
+        </div>
+        <h3>لا توجد أكواد بعد</h3>
+        <p>ابدأ بمسح أول باركود أو أضف كود يدوياً</p>
+        <button class="btn-primary" onclick="document.getElementById('scanBtn').click()">
+          <i class="fa-solid fa-qrcode"></i>
+          مسح باركود جديد
+        </button>
+      </div>
+
+      <ul id="barcodeList" class="barcode-list" aria-live="polite"></ul>
+    </main>
+
+    <!-- مودال الماسح -->
+    <div id="scannerModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fa-solid fa-qrcode"></i> مسح باركود</h2>
+          <button id="closeScanner" class="close-btn">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="tabs">
+          <button class="tab active" data-tab="cameraTab">
+            <i class="fa-solid fa-camera"></i>
+            <span>كاميرا</span>
+          </button>
+          <button class="tab" data-tab="manualTab">
+            <i class="fa-solid fa-keyboard"></i>
+            <span>إدخال يدوي</span>
+          </button>
+        </div>
+        
+        <div id="cameraTab" class="tab-content active">
+          <div class="camera-container">
+            <video id="video" autoplay playsinline muted></video>
+            <div id="reader" class="reader" style="display:none;"></div>
+            <div class="camera-overlay">
+              <div class="scan-frame"></div>
+            </div>
+            <button id="flashBtn" class="flash-btn" title="تشغيل/إيقاف الفلاش">
+              <i class="fa-solid fa-bolt"></i>
+            </button>
+          </div>
+          <p class="scan-instruction">وجه الكاميرا نحو الباركود للمسح التلقائي</p>
+        </div>
+        
+        <div id="manualTab" class="tab-content">
+          <div class="manual-input-container">
+            <div class="input-group">
+              <input id="manualInput" type="text" inputmode="numeric" pattern="\\d*" 
+                     placeholder="أدخل رقم الباركود..." class="manual-input">
+              <button id="addManualBtn" class="btn-add">
+                <i class="fa-solid fa-plus"></i>
+                <span>إضافة</span>
+              </button>
+            </div>
+            <p class="input-hint">
+              <i class="fa-solid fa-info-circle"></i>
+              يُسمح بالأرقام فقط
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال التأكيد -->
+    <div id="confirmModal" class="modal hidden">
+      <div class="modal-content small">
+        <div class="modal-header">
+          <h2>تأكيد العملية</h2>
+          <button id="closeConfirm" class="close-btn"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <p id="confirmMessage"></p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirmYes" class="btn-primary">تأكيد</button>
+          <button id="confirmNo" class="btn-cancel">إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- زر التثبيت -->
+    <button id="installBtn" class="install-btn" style="display:none;">📲 تثبيت التطبيق</button>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="pwa.js"></script>
+  </div>
+</body>
+</html>
